@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Churn Prediction</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            box-sizing: border-box;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #4b5563;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease-in-out;
+        }
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .radio-group, .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 5px;
+        }
+        .radio-group label, .checkbox-group label {
+            display: flex;
+            align-items: center;
+            font-weight: 400;
+            cursor: pointer;
+            color: #4b5563;
+        }
+        .radio-group input[type="radio"], .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+            width: auto; /* Override full width for radio/checkbox */
+            transform: scale(1.2); /* Make radio/checkbox slightly larger */
+        }
+        .button-primary {
+            background-color: #4f46e5;
+            color: #ffffff;
+            padding: 14px 25px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        }
+        .button-primary:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+        }
+        .button-primary:active {
+            transform: translateY(0);
+        }
+        .result-box {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #e0e7ff;
+            color: #374151;
+            font-size: 18px;
+            font-weight: 500;
+            text-align: center;
+            border: 1px solid #a5b4fc;
+            display: none; /* Hidden by default */
+        }
+        .result-box.churn {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #b91c1c;
+        }
+        .result-box.no-churn {
+            background-color: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Customer Churn Prediction</h2>
+
+        <form id="churnForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Gender -->
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="gender" value="1" required> Female</label>
+                    <label><input type="radio" name="gender" value="0"> Male</label>
+                </div>
+            </div>
+
+            <!-- Senior Citizen -->
+            <div class="form-group">
+                <label for="seniorCitizen">Senior Citizen:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="seniorCitizen" value="1" required> Yes</label>
+                    <label><input type="radio" name="seniorCitizen" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Partner -->
+            <div class="form-group">
+                <label for="partner">Partner:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="partner" value="1" required> Yes</label>
+                    <label><input type="radio" name="partner" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Dependents -->
+            <div class="form-group">
+                <label for="dependents">Dependents:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="dependents" value="1" required> Yes</label>
+                    <label><input type="radio" name="dependents" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Tenure -->
+            <div class="form-group">
+                <label for="tenure">Tenure (months):</label>
+                <input type="number" id="tenure" name="tenure" min="0" max="72" required>
+                <div id="tenureError" class="error-message"></div>
+            </div>
+
+            <!-- Phone Service -->
+            <div class="form-group">
+                <label for="phoneService">Phone Service:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="phoneService" value="1" required> Yes</label>
+                    <label><input type="radio" name="phoneService" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Multiple Lines -->
+            <div class="form-group">
+                <label for="multipleLines">Multiple Lines:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="multipleLines" value="1" required> Yes</label>
+                    <label><input type="radio" name="multipleLines" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Internet Service -->
+            <div class="form-group">
+                <label for="internetService">Internet Service:</label>
+                <select id="internetService" name="internetService" required>
+                    <option value="">Select...</option>
+                    <option value="DSL">DSL</option>
+                    <option value="Fiber optic">Fiber optic</option>
+                    <option value="No">No</option>
+                </select>
+            </div>
+
+            <!-- Online Security -->
+            <div class="form-group">
+                <label for="onlineSecurity">Online Security:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="onlineSecurity" value="1" required> Yes</label>
+                    <label><input type="radio" name="onlineSecurity" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Online Backup -->
+            <div class="form-group">
+                <label for="onlineBackup">Online Backup:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="onlineBackup" value="1" required> Yes</label>
+                    <label><input type="radio" name="onlineBackup" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Device Protection -->
+            <div class="form-group">
+                <label for="deviceProtection">Device Protection:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="deviceProtection" value="1" required> Yes</label>
+                    <label><input type="radio" name="deviceProtection" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Tech Support -->
+            <div class="form-group">
+                <label for="techSupport">Tech Support:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="techSupport" value="1" required> Yes</label>
+                    <label><input type="radio" name="techSupport" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Streaming TV -->
+            <div class="form-group">
+                <label for="streamingTV">Streaming TV:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="streamingTV" value="1" required> Yes</label>
+                    <label><input type="radio" name="streamingTV" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Streaming Movies -->
+            <div class="form-group">
+                <label for="streamingMovies">Streaming Movies:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="streamingMovies" value="1" required> Yes</label>
+                    <label><input type="radio" name="streamingMovies" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Contract -->
+            <div class="form-group">
+                <label for="contract">Contract:</label>
+                <select id="contract" name="contract" required>
+                    <option value="">Select...</option>
+                    <option value="Month-to-month">Month-to-month</option>
+                    <option value="One year">One year</option>
+                    <option value="Two year">Two year</option>
+                </select>
+            </div>
+
+            <!-- Paperless Billing -->
+            <div class="form-group">
+                <label for="paperlessBilling">Paperless Billing:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="paperlessBilling" value="1" required> Yes</label>
+                    <label><input type="radio" name="paperlessBilling" value="0"> No</label>
+                </div>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="form-group">
+                <label for="paymentMethod">Payment Method:</label>
+                <select id="paymentMethod" name="paymentMethod" required>
+                    <option value="">Select...</option>
+                    <option value="Electronic check">Electronic check</option>
+                    <option value="Mailed check">Mailed check</option>
+                    <option value="Bank transfer (automatic)">Bank transfer (automatic)</option>
+                    <option value="Credit card (automatic)">Credit card (automatic)</option>
+                </select>
+            </div>
+
+            <!-- Monthly Charges -->
+            <div class="form-group">
+                <label for="monthlyCharges">Monthly Charges:</label>
+                <input type="number" step="0.01" id="monthlyCharges" name="monthlyCharges" min="0" required>
+                <div id="monthlyChargesError" class="error-message"></div>
+            </div>
+
+            <!-- Total Charges -->
+            <div class="form-group">
+                <label for="totalCharges">Total Charges:</label>
+                <input type="number" step="0.01" id="totalCharges" name="totalCharges" min="0" required>
+                <div id="totalChargesError" class="error-message"></div>
+            </div>
+
+            <div class="md:col-span-2 form-group">
+                <button type="submit" class="button-primary">Predict Churn</button>
+            </div>
+        </form>
+
+        <div id="predictionResult" class="result-box">
+            <!-- Prediction result will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('churnForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const inputData = {};
+
+            // Collect all form data
+            for (const [key, value] of formData.entries()) {
+                inputData[key] = value;
+            }
+
+            // --- Input Validation ---
+            let isValid = true;
+
+            // Validate tenure
+            const tenure = parseFloat(inputData.tenure);
+            const tenureError = document.getElementById('tenureError');
+            if (isNaN(tenure) || tenure < 0 || tenure > 72) {
+                tenureError.textContent = 'Tenure must be between 0 and 72 months.';
+                tenureError.style.display = 'block';
+                isValid = false;
+            } else {
+                tenureError.style.display = 'none';
+            }
+
+            // Validate Monthly Charges
+            const monthlyCharges = parseFloat(inputData.monthlyCharges);
+            const monthlyChargesError = document.getElementById('monthlyChargesError');
+            if (isNaN(monthlyCharges) || monthlyCharges < 0) {
+                monthlyChargesError.textContent = 'Monthly Charges must be a positive number.';
+                monthlyChargesError.style.display = 'block';
+                isValid = false;
+            } else {
+                monthlyChargesError.style.display = 'none';
+            }
+
+            // Validate Total Charges
+            const totalCharges = parseFloat(inputData.totalCharges);
+            const totalChargesError = document.getElementById('totalChargesError');
+            if (isNaN(totalCharges) || totalCharges < 0) {
+                totalChargesError.textContent = 'Total Charges must be a positive number.';
+                totalChargesError.style.display = 'block';
+                isValid = false;
+            } else {
+                totalChargesError.style.display = 'none';
+            }
+
+            if (!isValid) {
+                return; // Stop if validation fails
+            }
+
+            // --- Data Preprocessing (Mimicking Python Notebook) ---
+
+            // 1. Binary features (Yes/No to 1/0, Gender Female/Male to 1/0)
+            const processedData = {
+                gender: parseInt(inputData.gender), // 1 for Female, 0 for Male
+                SeniorCitizen: parseInt(inputData.seniorCitizen),
+                Partner: parseInt(inputData.partner),
+                Dependents: parseInt(inputData.dependents),
+                PhoneService: parseInt(inputData.phoneService),
+                MultipleLines: parseInt(inputData.multipleLines),
+                OnlineSecurity: parseInt(inputData.onlineSecurity),
+                OnlineBackup: parseInt(inputData.onlineBackup),
+                DeviceProtection: parseInt(inputData.deviceProtection),
+                TechSupport: parseInt(inputData.techSupport),
+                StreamingTV: parseInt(inputData.streamingTV),
+                StreamingMovies: parseInt(inputData.streamingMovies),
+                PaperlessBilling: parseInt(inputData.paperlessBilling),
+            };
+
+            // 2. Numerical features scaling (MinMaxScaler simulation)
+            // These min/max values are based on observations from the notebook or reasonable assumptions.
+            // In a real app, these would be derived from the actual training data scaler.
+            const tenureMin = 0, tenureMax = 72;
+            const monthlyChargesMin = 18.25, monthlyChargesMax = 118.75; // Approx from notebook data
+            const totalChargesMin = 18.8, totalChargesMax = 8684.8; // Approx from notebook data
+
+            processedData.tenure = (tenure - tenureMin) / (tenureMax - tenureMin);
+            processedData.MonthlyCharges = (monthlyCharges - monthlyChargesMin) / (monthlyChargesMax - monthlyChargesMin);
+            processedData.TotalCharges = (totalCharges - totalChargesMin) / (totalChargesMax - totalChargesMin);
+
+            // Ensure scaled values are within [0, 1] range, handle potential floating point issues
+            processedData.tenure = Math.max(0, Math.min(1, processedData.tenure));
+            processedData.MonthlyCharges = Math.max(0, Math.min(1, processedData.MonthlyCharges));
+            processedData.TotalCharges = Math.max(0, Math.min(1, processedData.TotalCharges));
+
+
+            // 3. One-hot encoding for categorical features
+            // InternetService
+            processedData['InternetService_DSL'] = (inputData.internetService === 'DSL' ? 1 : 0);
+            processedData['InternetService_Fiber optic'] = (inputData.internetService === 'Fiber optic' ? 1 : 0);
+            processedData['InternetService_No'] = (inputData.internetService === 'No' ? 1 : 0);
+
+            // Contract
+            processedData['Contract_Month-to-month'] = (inputData.contract === 'Month-to-month' ? 1 : 0);
+            processedData['Contract_One year'] = (inputData.contract === 'One year' ? 1 : 0);
+            processedData['Contract_Two year'] = (inputData.contract === 'Two year' ? 1 : 0);
+
+            // PaymentMethod
+            processedData['PaymentMethod_Bank transfer (automatic)'] = (inputData.paymentMethod === 'Bank transfer (automatic)' ? 1 : 0);
+            processedData['PaymentMethod_Credit card (automatic)'] = (inputData.paymentMethod === 'Credit card (automatic)' ? 1 : 0);
+            processedData['PaymentMethod_Electronic check'] = (inputData.paymentMethod === 'Electronic check' ? 1 : 0);
+            processedData['PaymentMethod_Mailed check'] = (inputData.paymentMethod === 'Mailed check' ? 1 : 0);
+
+            // --- Simulate Prediction ---
+            // In a real application, you would send `processedData` to your deployed model API.
+            // Example:
+            /*
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(processedData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const churnProbability = data.prediction; // Assuming your API returns a 'prediction' key
+                displayResult(churnProbability);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                const resultDiv = document.getElementById('predictionResult');
+                resultDiv.textContent = 'Error during prediction. Please try again.';
+                resultDiv.className = 'result-box churn'; // Use churn style for error
+                resultDiv.style.display = 'block';
+            });
+            */
+
+            // For this example, we'll simulate a random prediction
+            const churnProbability = Math.random(); // Random probability between 0 and 1
+            displayResult(churnProbability);
+        });
+
+        function displayResult(probability) {
+            const resultDiv = document.getElementById('predictionResult');
+            resultDiv.style.display = 'block'; // Make result box visible
+
+            if (probability > 0.5) {
+                resultDiv.className = 'result-box churn';
+                resultDiv.innerHTML = `<h3>Prediction: Customer is likely to CHURN!</h3>
+                                       <p>Probability: ${(probability * 100).toFixed(2)}%</p>`;
+            } else {
+                resultDiv.className = 'result-box no-churn';
+                resultDiv.innerHTML = `<h3>Prediction: Customer is likely to NOT CHURN.</h3>
+                                       <p>Probability: ${((1 - probability) * 100).toFixed(2)}% (of not churning)</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
